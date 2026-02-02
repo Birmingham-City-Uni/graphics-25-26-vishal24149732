@@ -64,7 +64,21 @@ int main()
 	{
 		std::getline(bunnyFile, line);
 		// *** YOUR CODE HERE ***
+		if (line[0] == 'v') {
+			line.erase(0,2);
+			std::stringstream ss(line);
+			std::string word;
+			Vector3 coordinates;
+			int x = 0;
+			while (ss >> word) {
+				coordinates[x] = (std::stof(word));
+				
+				x++;
+			}
+			vertices.push_back(coordinates);
+			x = 0;
 
+		}
 		// Process each line of the file
 		// Load it into a new Vector3, if the line starts with a V
 		// Push this back into the std::vector of vertices
