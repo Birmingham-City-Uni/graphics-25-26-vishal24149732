@@ -64,7 +64,7 @@ int main()
 	{
 		std::getline(bunnyFile, line);
 		// *** YOUR CODE HERE ***
-		if (line[0] == 'v') {
+		if (line[0] == 'v' && line[1] == ' ') {
 			line.erase(0,2);
 			std::stringstream ss(line);
 			std::string word;
@@ -97,6 +97,9 @@ int main()
 		//         big enough to see.
 
 		// *** YOUR CODE HERE ***
+		int x = (v[0] * 200) + (width / 2);
+		int y = (-v[1] * 200) + (height / 2);
+		setPixel(imageBuffer, x, y, width, height, 255, 255, 255);
 	}
 
 
