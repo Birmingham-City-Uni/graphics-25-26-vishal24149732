@@ -16,6 +16,8 @@ public:
 		:x_(0), y_(0)
 	{
 		// YOUR CODE HERE
+		x_ = 0.0f;
+		y_ = 0.0f;
 	}
 
 	// This constructor can be used to set the x, y and z components of a vector when it
@@ -25,6 +27,8 @@ public:
 		:x_(x), y_(y)
 	{
 		// YOUR CODE HERE
+		x_ = x;
+		y_ = y;
 	}
 
 	// Implement this method to add two vectors.
