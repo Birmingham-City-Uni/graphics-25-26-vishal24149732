@@ -34,6 +34,11 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 	
 	// YOUR CODE HERE
 	int minX = 0, minY = 0, maxX = 0, maxY = 0;
+	minX = std::min({ p0.x(), p1.x(), p2.x() });
+	minY = std::min({ p0.y(), p1.y(), p2.y() });
+	maxX = std::max({ p0.x(), p1.x(), p2.x() });
+	maxY = std::max({ p0.y(), p1.y(), p2.y() });
+
 
 	// Check your minX, minY, maxX and maxY values don't lie outside the image!
 	// This would cause errors if you attempt to draw there.
