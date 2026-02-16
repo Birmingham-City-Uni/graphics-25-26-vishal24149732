@@ -2,6 +2,7 @@
 #include <lodepng.h>
 #include <fstream>
 #include <sstream>
+#include <math.h>
 #include "Vector3.hpp"
 #include "Vector2.hpp"
 
@@ -37,20 +38,36 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 	minX = std::min({ p0.x(), p1.x(), p2.x() });
 	minY = std::min({ p0.y(), p1.y(), p2.y() });
 	maxX = std::max({ p0.x(), p1.x(), p2.x() });
-	maxY = std::max({ p0.y(), p1.y(), p2.y() });
-
+	maxY = std::max({ p0.y(), p1.y(), p2.y() }); 
 
 	// Check your minX, minY, maxX and maxY values don't lie outside the image!
 	// This would cause errors if you attempt to draw there.
 	// That is, clamp these values so that 0 <= x < width and 0 <= y < height.
 
 	// YOUR CODE HERE
+	if (minX < 0) {
+		minX = 0;
+	} 
+	if (minY < 0) {
+		minY = 0;
+	}
+	if (maxX >= width) {
+		maxX = width - 1;
+	}
+	if (maxY >= height) {
+		maxY = height - 1;
+	}
+	if (minX >= width) {
+		minX = width - 1;
+	}
 
 	// Find vectors going along two edges of the triangle
-	// from p0 to p1, and from p1 to p2.
+	// from p0 to p1, and from p0to p2.
 
 	// YOUR CODE HERE
 	Vector2 edge1, edge2;
+	edge1 = p1 - p0;
+	edge2 = p2 - p0;
 
 	// Find the area of the triangle using a cross product.
 	// Optional: You can use the sign of the cross product to see if this triangle is facing towards
@@ -60,6 +77,9 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 
 	// YOUR CODE HERE
 	float triangleArea = 0.0f;
+	triangleArea = edge1.cross(edge2) * 0.5f;
+	if (triangleArea < 0.0f) return;
+	
 
 	// Now let's actually draw the triangle!
 	// We'll do a for loop over all pixels in the bounding box.
@@ -75,21 +95,36 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 			float a0;
 			float a1;
 			float a2;
+			Vector2 p1p = p - p1;
+			Vector2 p1p2 = p2 - p1;
+			a0 = fabsf(p1p.cross(p1p2) * 0.5);
 
+			Vector2 p0p = p - p0;
+			Vector2 p0p2 = p2 - p0;
+			a1 = fabsf(p0p.cross(p0p2) * 0.5);
+
+			
+			Vector2 p1p0 = p0 - p1;
+			a2 = fabsf(p1p.cross(p1p0)* 0.5);
 			// Find the barycentrics b0, b1, and b2 by dividing by triangle area.
 			// YOUR CODE HERE - do the division and find b0, b1, b2.
 			float b0;
 			float b1;
 			float b2;
+			b0 = a0 / triangleArea;
+			b1 = a1 / triangleArea;
+			b2 = a2 / triangleArea;
 
 			// Check if the sum of b0, b1, b2 is bigger than 1 (or ideally a number just over 1 
 			// to account for numerical error).
 			// If it's bigger, skip to the next pixel as we are outside the triangle.
 			// YOUR CODE HERE
 			float sum;
-
+			sum = b0 + b1 + b2;
+			if (sum <= 1.001) {
+				setPixel(image, x, y, width, height, r, g, b, a);
+			}
 			// Now we're sure we're inside the triangle, and we can draw this pixel!
-			setPixel(image, x, y, width, height, r, g, b, a);
 		}
 }
 
@@ -157,6 +192,7 @@ int main()
 		// the rand() function in C++.
 		// Hint: Remember rand() returns an int, but we want our colour values to lie between 0 and 255.
 		// How can we make sure our random r, g, b values stick to the right range?
+		drawTriangle(imageBuffer, width, height, p0, p1, p2, rand()%255, rand() % 255, rand() % 255, 255);
 
 		// Bunny 2: (Sort of) Diffuse Lighting Bunny
 		// For the final task we'll do a bit of a preview of session 5 on diffuse lighting.
@@ -168,6 +204,8 @@ int main()
 		// Once you have your normal, take the dot product with (0,0,1). This will effectively measure how much
 		// the normal points down the positive z-axis.
 		// Use this value to set the brightness of the triangle (remember to scale it back to the [0,255] range).
+
+
 	}
 
 
