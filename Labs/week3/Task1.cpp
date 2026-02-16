@@ -205,7 +205,19 @@ int main()
 		// the normal points down the positive z-axis.
 		// Use this value to set the brightness of the triangle (remember to scale it back to the [0,255] range).
 
-
+		Vector3 v0 = vertices[face[0]];
+		Vector3 v1 = vertices[face[1]];
+		Vector3 v2 = vertices[face[2]];
+		Vector3 edge1 = v1 - v0;
+		Vector3 edge2 = v2 - v0;
+		Vector3 normal = edge1.cross(edge2);
+		normal = normal.normalized();
+		float normalD = normal.dot(Vector3(0, 0, 1));
+		
+		Vector2 P0(v0.x() * 250 + width / 2, -v0.y() * 250 + height / 2);
+		Vector2 P1(v1.x() * 250 + width / 2, -v1.y() * 250 + height / 2);
+		Vector2 P2(v2.x() * 250 + width / 2, -v2.y() * 250 + height / 2);
+		drawTriangle(imageBuffer, width, height, P0, P1, P2, normalD * 255, normalD * 255, normalD * 255, 255);
 	}
 
 
