@@ -115,9 +115,15 @@ void drawMesh(std::vector<unsigned char>& image, const Mesh& mesh,
 		// The matrix is 4x4, and the v0, v1, v2 are 3D! You'll need to convert them to 4D 
 		// homogeneous vectors first (add a 1 in the w component).
 		// You can use the vec3ToVec4 function above to do this.
-		tv0 = Eigen::Vector4f::Zero();
+		Eigen::Vector4f v0h = vec3ToVec4(v0);
+		Eigen::Vector4f v1h = vec3ToVec4(v1);
+		Eigen::Vector4f v2h = vec3ToVec4(v2);
+		tv0 = transform * v0h;
+		tv1 = transform * v1h;
+		tv2 = transform * v2h;
+		/*tv0 = Eigen::Vector4f::Zero();
 		tv1 = Eigen::Vector4f::Zero();
-		tv2 = Eigen::Vector4f::Zero();
+		tv2 = Eigen::Vector4f::Zero();*/
 
 		Eigen::Vector2f p0(tv0.x() * 250 + width / 2, -tv0.y() * 250 + height / 2);
 		Eigen::Vector2f p1(tv1.x() * 250 + width / 2, -tv1.y() * 250 + height / 2);
@@ -143,14 +149,22 @@ void drawMesh(std::vector<unsigned char>& image, const Mesh& mesh,
 Eigen::Matrix4f translationMatrix(const Eigen::Vector3f& t)
 {
 	// *** Your code here ***
-	return Eigen::Matrix4f::Identity();
+	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+	M(0, 3) = t.x();
+	M(1, 3) = t.y();
+	M(2, 3) = t.z();
+	return M;
 }
 
 // Implement this function that makes a uniform scaling matrix
 Eigen::Matrix4f scaleMatrix(float s)
 {
 	// *** Your code here ***
-	return Eigen::Matrix4f::Identity();
+	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+	M(0, 0) = s;
+	M(1, 1) = s;
+	M(2, 2) = s;
+	return M;
 }
 
 // Implement this function that makes a rotation matrix around the y
@@ -159,7 +173,12 @@ Eigen::Matrix4f scaleMatrix(float s)
 Eigen::Matrix4f rotateYMatrix(float theta)
 {
 	// *** Your code here ***
-	return Eigen::Matrix4f::Identity();
+	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+	M(0, 0) = cosf(theta);
+	M(0, 2) = sinf(theta);
+	M(2, 0) = -sinf(theta);
+	M(2, 2) = cosf(theta);
+	return M;
 }
 
 int main()
@@ -186,7 +205,8 @@ int main()
 
 	// Subtask: Try making a 2D vector of ints using the template <> syntax.
 	// Is there a handy typedef for this too?
-
+	Eigen::Vector2i myTwoByOneIntVector;
+	Eigen::Matrix<int, 2, 1> myTwoByOneIntVector2;
 	// Matrices
 	// For the matrix sizes we'll commonly use (3x3 and 4x4) Eigen has typedefs for these too:
 	Eigen::Matrix3f myThreeByThreeMatrix;
@@ -220,6 +240,7 @@ int main()
 	// Subtask 3: Try multiplying myThreeByThreeMatrix by myInverse
 	// Print out the result.
 	// Is it what you would expect?
+	
 
 	// Final advanced tip: the .block<>() function
 	// Eigen has a .block method that's super useful for getting or setting a
@@ -235,7 +256,7 @@ int main()
 		1, 1, 1,
 		1, 1, 1,
 		1, 1, 1;
-	myMat4.block<3, 3>(0, 0) = myMat3;
+	myMat4.block<3, 3>(1, 1) = myMat3;
 	std::cout << "myMat4: " << myMat4 << std::endl;
 	// Note the numbers in the triangle brackets say how many rows and columns to get
 	// The round brackets give the row, column of the top left corner of the block.
@@ -257,9 +278,11 @@ int main()
 
 	std::string bunnyFilename = "../models/stanford_bunny_simplified.obj";
 	std::string dragonFilename = "../models/stanford_dragon_simplified.obj";
+	std::string spiderManFilename = "M-CoC_iOS_HERO_Peter_Parker_Spider - Man_Stark_Enhanced.obj";
 
 	Mesh bunnyMesh = loadMeshFile(bunnyFilename);
 	Mesh dragonMesh = loadMeshFile(dragonFilename);
+	Mesh spiderManMesh = loadMeshFile(spiderManFilename);
 
 
 	// ============ TASK 3 =================
@@ -272,6 +295,11 @@ int main()
 
 	Eigen::Matrix4f bunnyTransform = Eigen::Matrix4f::Identity();
 	Eigen::Matrix4f dragonTransform = Eigen::Matrix4f::Identity();
+	//Eigen::Matrix4f spiderManTransform = Eigen::Matrix4f::Identity();
+	bunnyTransform =
+		translationMatrix(Eigen::Vector3f(-0.5f, -0.2f, 0.0f)) * rotateYMatrix(0.5f) * scaleMatrix(0.01f);
+	dragonTransform =
+		translationMatrix(Eigen::Vector3f(0.5f, 0.2f, 0.0f)) * rotateYMatrix(1.0f) * scaleMatrix(0.01f);
 
 	// =========== TASK 4 ==============
 	// Prepare your own mesh in blender, exporting as OBJ
