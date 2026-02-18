@@ -278,7 +278,7 @@ int main()
 
 	std::string bunnyFilename = "../models/stanford_bunny_simplified.obj";
 	std::string dragonFilename = "../models/stanford_dragon_simplified.obj";
-	std::string spiderManFilename = "M-CoC_iOS_HERO_Peter_Parker_Spider - Man_Stark_Enhanced.obj";
+	std::string spiderManFilename = "../models/sm.obj";
 
 	Mesh bunnyMesh = loadMeshFile(bunnyFilename);
 	Mesh dragonMesh = loadMeshFile(dragonFilename);
@@ -295,11 +295,15 @@ int main()
 
 	Eigen::Matrix4f bunnyTransform = Eigen::Matrix4f::Identity();
 	Eigen::Matrix4f dragonTransform = Eigen::Matrix4f::Identity();
-	//Eigen::Matrix4f spiderManTransform = Eigen::Matrix4f::Identity();
+	Eigen::Matrix4f spiderManTransform = Eigen::Matrix4f::Identity();
+	std::cout << "huh: " << bunnyTransform << std::endl;
 	bunnyTransform =
 		translationMatrix(Eigen::Vector3f(-0.5f, -0.2f, 0.0f)) * rotateYMatrix(0.5f) * scaleMatrix(0.01f);
+	std::cout << "myMat4: " << bunnyTransform << std::endl;
 	dragonTransform =
 		translationMatrix(Eigen::Vector3f(0.5f, 0.2f, 0.0f)) * rotateYMatrix(1.0f) * scaleMatrix(0.01f);
+	spiderManTransform =
+		translationMatrix(Eigen::Vector3f(0.0f, 0.0f, 0.0f)) * rotateYMatrix(0.5f) * scaleMatrix(0.5f);
 
 	// =========== TASK 4 ==============
 	// Prepare your own mesh in blender, exporting as OBJ
@@ -308,6 +312,7 @@ int main()
 
 	drawMesh(imageBuffer, bunnyMesh, Eigen::Vector3f(0, 1, 0), bunnyTransform, width, height);
 	drawMesh(imageBuffer, dragonMesh, Eigen::Vector3f(0, 1, 1), dragonTransform, width, height);
+	drawMesh(imageBuffer, spiderManMesh, Eigen::Vector3f(0, 1, 1),spiderManTransform, width, height);
 
 	// *** Encoding image data ***
 	// PNG files are compressed to save storage space. 
