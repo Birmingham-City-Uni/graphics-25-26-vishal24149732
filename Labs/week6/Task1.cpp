@@ -19,7 +19,6 @@
 // This is a great time to start on your own code in the coursework/rasteriser folder, using this as a base if
 // you wish. We will in future labs work on more advanced shading, but you can port this feature over later.
 
-
 struct Triangle {
 	std::array<Eigen::Vector3f, 3> screen; // Coordinates of the triangle in screen space.
 	std::array<Eigen::Vector3f, 3> verts; // Vertices of the triangle in world space.
@@ -36,8 +35,14 @@ Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f*M_P
 	// Make a projection matrix following the formulation in the lecture slides, and using the provided parameters.
 	// First, work out vertical FoV based on the horizontal FoV:
 	float vertFov = 0.f;
+	vertFov = (horzFov * height) / width;
 	// Now construct the matrix.
 	Eigen::Matrix4f projection;
+	projection(0, 0) = 1 / tanf(horzFov);
+	projection(1, 1) = 1 / tanf(vertFov);
+	projection(2, 2) = zFar / (zFar - zNear);
+	projection(2, 3) = (-zFar * zNear) / (zFar - zNear);
+	projection(3, 2) = 1;
 	return projection;
 	// *** END YOUR CODE ***
 }
@@ -240,20 +245,36 @@ void drawMesh(std::vector<unsigned char>& image,
 
 		// Work out the clip space coordinates, by multiplying by worldToClip and doing the 
 		// perspective divide.
-		Eigen::Vector4f vClip0 = Eigen::Vector4f::Zero();
-		Eigen::Vector4f vClip1 = Eigen::Vector4f::Zero();
-		Eigen::Vector4f vClip2 = Eigen::Vector4f::Zero();
+		Eigen::Vector4f vClip0 = (worldToClip * vec3ToVec4(t.verts[0]));
+		Eigen::Vector4f vClip1 = (worldToClip * vec3ToVec4(t.verts[1]));
+		Eigen::Vector4f vClip2 = (worldToClip * vec3ToVec4(t.verts[2]));
+
+		vClip0 /= vClip0.w();
+		vClip1 /= vClip0.w();
+		vClip2 /= vClip0.w();
 
 		// Check that all 3 vertices are in the clip box (-1 to 1 in x, y and z) and if not,
 		// skip drawing this triangle.
 		// Hint: I've made a function outsideClipBox in LinAlg.hpp to help with this!
-
+		if (outsideClipBox(vClip0) && outsideClipBox(vClip1) && outsideClipBox(vClip2)) {
+			return;
+		}
 		// Work out the screen space coordinates based on the image height and width.
 		// Set the z component of each screen coordinate to be the clip-space z (for example
 		// t.screen[0].z() == vClip0.z());
 		t.screen[0] = Eigen::Vector3f::Zero();
 		t.screen[1] = Eigen::Vector3f::Zero();
 		t.screen[2] = Eigen::Vector3f::Zero();
+		t.screen[0].x() = width * ((vClip0.x() + 1) / 2);
+		t.screen[0].y() = height * ((vClip0.y() + 1) / 2);
+		t.screen[1].x() = width * ((vClip1.x() + 1) / 2);
+		t.screen[1].y() = height * ((vClip1.y() + 1) / 2);
+		t.screen[2].x() = width * ((vClip2.x() + 1) / 2);
+		t.screen[2].y() = height * ((vClip2.y() + 1) / 2);
+
+		t.screen[0].z() = vClip0.z();
+		t.screen[1].z() = vClip1.z();
+		t.screen[2].z() = vClip2.z();
 		// *** END YOUR CODE ***
 
 		// transform the normals (using the inverse transpose of the upper 3x3 block)
@@ -307,8 +328,9 @@ int main()
 	// The main important task = set up the worldToCamera and worldToClip matrices here!
 	// Set up worldToCamera, based on cameraToWorld above
 	Eigen::Matrix4f worldToCamera;
+	worldToCamera = cameraToWorld.inverse();
 	// Set up worldToClip, using the projection and worldToCamera matrices
-	Eigen::Matrix4f worldToClip;
+	Eigen::Matrix4f worldToClip = worldToCamera * projection;
 
 	// *** END YOUR CODE ***
 
