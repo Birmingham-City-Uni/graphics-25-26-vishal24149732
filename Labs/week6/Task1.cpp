@@ -37,12 +37,14 @@ Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f*M_P
 	float vertFov = 0.f;
 	vertFov = (horzFov * height) / width;
 	// Now construct the matrix.
-	Eigen::Matrix4f projection;
+	Eigen::Matrix4f projection = Eigen::Matrix4f::Zero();
+	std::cout << projection;
 	projection(0, 0) = 1 / tanf(horzFov);
 	projection(1, 1) = 1 / tanf(vertFov);
 	projection(2, 2) = zFar / (zFar - zNear);
 	projection(2, 3) = (-zFar * zNear) / (zFar - zNear);
 	projection(3, 2) = 1;
+	std::cout << projection;
 	return projection;
 	// *** END YOUR CODE ***
 }
@@ -153,12 +155,14 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 
 			// Get the value from the texture (hint: use the getPixel function on the albedoTexture).
 			Color texColor{ 255,255,255,255 };
+			
 
 			// Convert it into an Eigen::Vector3f as an albedo
 			// (Optional bonus task, if you checked out the slides on gamma correction:
 			// gamma correct this colour, so the texture doesn't appear overly bright.
 			// should you raise to the power 1/2.2, or 2.2?)
-			Eigen::Vector3f albedo = Eigen::Vector3f::Zero();
+			
+			Eigen::Vector3f albedo(0.8f, 0.8f, 0.8f);
 
 			// *** END YOUR CODE ***
 
@@ -250,8 +254,8 @@ void drawMesh(std::vector<unsigned char>& image,
 		Eigen::Vector4f vClip2 = (worldToClip * vec3ToVec4(t.verts[2]));
 
 		vClip0 /= vClip0.w();
-		vClip1 /= vClip0.w();
-		vClip2 /= vClip0.w();
+		vClip1 /= vClip1.w();
+		vClip2 /= vClip2.w();
 
 		// Check that all 3 vertices are in the clip box (-1 to 1 in x, y and z) and if not,
 		// skip drawing this triangle.
@@ -330,7 +334,7 @@ int main()
 	Eigen::Matrix4f worldToCamera;
 	worldToCamera = cameraToWorld.inverse();
 	// Set up worldToClip, using the projection and worldToCamera matrices
-	Eigen::Matrix4f worldToClip = worldToCamera * projection;
+	Eigen::Matrix4f worldToClip = projection * worldToCamera;
 
 	// *** END YOUR CODE ***
 
