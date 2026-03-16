@@ -277,11 +277,11 @@ void drawMesh(std::vector<unsigned char>& image,
 		t.screen[1] = Eigen::Vector3f::Zero();
 		t.screen[2] = Eigen::Vector3f::Zero();
 		t.screen[0].x() = width * ((vClip0.x() + 1) / 2);
-		t.screen[0].y() = height * ((vClip0.y() + 1) / 2);
+		t.screen[0].y() = height * ((-vClip0.y() + 1) / 2);
 		t.screen[1].x() = width * ((vClip1.x() + 1) / 2);
-		t.screen[1].y() = height * ((vClip1.y() + 1) / 2);
+		t.screen[1].y() = height * ((-vClip1.y() + 1) / 2);
 		t.screen[2].x() = width * ((vClip2.x() + 1) / 2);
-		t.screen[2].y() = height * ((vClip2.y() + 1) / 2);
+		t.screen[2].y() = height * ((-vClip2.y() + 1) / 2);
 
 		t.screen[0].z() = vClip0.z();
 		t.screen[1].z() = vClip1.z();
@@ -330,11 +330,11 @@ int main()
 	// *** YOUR CODE HERE ***
 	// This makes the projection matrix, using the function you implemented. Once the code is working,
 	// try changing the FoV!
-	Eigen::Matrix4f projection = projectionMatrix(height, width);
+	Eigen::Matrix4f projection = projectionMatrix(height, width , M_PI_4 , 10.0f, 0.01f);
 
 	// This matrix rotates the camera, tilting it down, then translates it up to make it look down on the scene.
 	// Once your code is working, try changing this to move the camera around!
-	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, 0.8f, 0.f)) * rotateXMatrix(0.4f);
+	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, 0.1f, 0.f)) * rotateXMatrix(0.4f);
 
 	// The main important task = set up the worldToCamera and worldToClip matrices here!
 	// Set up worldToCamera, based on cameraToWorld above

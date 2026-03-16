@@ -79,7 +79,7 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 		// Exit and quit drawing!
 		return;
 	}
-
+	
 	for(int x = minX; x <= maxX; ++x) 
 		for (int y = minY; y <= maxY; ++y) {
 			Eigen::Vector2f p(x, y);
@@ -107,20 +107,23 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 
 			// Get the depths from the camera-space position of the 3 corners.
 			float depth0 = 0.f, depth1 = 0.f, depth2 = 0.f;
-			
+			depth0 = t.cam[0].z();
+			depth1 = t.cam[1].z();
+			depth2 = t.cam[2].z();
 			// Work out the depth at the point P
 			float depthP = 0.f;
-
+			depthP = 1 / ((b0 / depth0) + (b1 / depth1) + (b2 / depth2));
 			// Interpolate to find the world-space position of this pixel (correct this version to be 
 			// perspective-correct).
 			// Don't forget to multiply by depthP!
 			Eigen::Vector3f worldP = Eigen::Vector3f::Zero();
-
+			worldP = depthP * (((t.verts[0] * b0) / depth0) + ((t.verts[1] * b1) / depth1) + ((t.verts[2] * b2) / depth2));
 			// Interpolate to find the normal of this pixel (correct this version to be 
 			// perspective-correct).
 			// Tip: you don't need to worry about multiplying by depthP - you'll normalise this anyway!
 			Eigen::Vector3f normP = Eigen::Vector3f::Zero();
-
+			normP = ((t.norms[0] * b0) / depth0) + ((t.norms[1] * b1) / depth1) + ((t.norms[2] * b2) / depth2);
+			normP.normalize();
 			// Interpolate to find the correct clip-space depth (correct this version to be perspective-correct)
 			// This won't make too much of a difference in this case, but technically this version does use slightly
 			// incorrect depths.
@@ -300,7 +303,7 @@ int drawScene(const std::string& outputFilename, ShadingMode mode, float specula
 	// I've already added an ambient light for you!
 	lights.emplace_back(new AmbientLight(Eigen::Vector3f(0.1f, 0.1f, 0.1f)));
 
-	lights.emplace_back(new PointLight(2.f * Eigen::Vector3f(1.1f, 1.1f, 1.1f), Eigen::Vector3f(0.f, 0.8f, 6.f)));
+	lights.emplace_back(new PointLight(4.f * Eigen::Vector3f(1.1f, 1.1f, 1.1f), Eigen::Vector3f(0.f, 0.8f, 6.f)));
 	//lights.emplace_back(new DirectionalLight(Eigen::Vector3f(0.4f, 0.4f, 0.4f), Eigen::Vector3f(0.f, -0.8f, -1.f)));
 	//lights.emplace_back(new SpotLight(Eigen::Vector3f(10.0f, 0.0f, 0.0f), Eigen::Vector3f(0.f, 1.f, 0.0f), Eigen::Vector3f(0, -1, 0), M_PI/8));
 
