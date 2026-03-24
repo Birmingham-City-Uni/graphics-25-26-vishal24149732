@@ -83,13 +83,21 @@ bool raySphereIntersection(const Ray& ray, const Sphere& sphere, Vector3f& inter
 	float A = 1;
 	float B = (2 * v).dot(ray.direction.normalized());
 	float C = (v.x() * v.x()) + (v.y() * v.y()) + (v.z() * v.z()) - (sphere.radius * sphere.radius);
-	float D = std::sqrtf((B * B) - (4 * A * C));
+	float D = (B * B) - (4 * A * C);
 	if (D < 0) {
 		return false;
 	}
-
-	t = (-B + D) / (2 * A);
-	t = std::min(minT, t);
+	D = std::sqrtf(D);
+	float t1 = (-B - D) / (2 * A);
+	float t2 = (-B + D) / (2 * A);
+	if (t1 > minT && t2 > minT)
+		t = std::min(t1, t2);
+	else if (t1 > minT)
+		t = t1;
+	else if (t2 > minT)
+		t = t2;
+	else
+		return false;
 	intersection = ray.origin + (t * ray.direction.normalized());
 	return true;
 	// 2. Find the value of the discriminant B^2 - 4AC
@@ -114,7 +122,7 @@ Vector3f getSphereNormal(const Sphere& sphere, const Vector3f& location) {
 	Vector3f N = location - sphere.centre;
 	// 
 	// Remove this existing code that just returns 0.
-	return N;
+	return N.normalized();
 	// *** END YOUR CODE ***
 }
 
@@ -217,13 +225,25 @@ Vector3f traceRay(const Ray& ray, const std::vector<Sphere>& spheres, const std:
 				//      c. If it's not, compare the value of t to the distance from hitIntersection to the light
 				//			the point is only in shadow if the value of t is less than this distance.
 				Ray shadowRay;
-				shadowRay.origin = hitIntersection;
-				shadowRay.direction = -lightDir;
+				shadowRay.origin = hitIntersection + lightDir * 0.001f;
+				shadowRay.direction = lightDir.normalized();
 				for (const Sphere& sphere : spheres) {
 					float t;
 					Vector3f intersection;
 					if (raySphereIntersection(shadowRay, sphere, intersection, t)) {
+						if (sphere.material == Material::REFRACTIVE) continue;
 
+						if (light->getType() == Light::DIRECTIONAL) {
+							inShadow = true;
+							break;
+						}
+						else {
+							float lightDist = (light->getLightLocation() - hitIntersection).norm();
+							if (t < lightDist) {
+								inShadow = true;
+								break;
+							}
+						}
 					}
 				}
 				// *** END YOUR CODE ***
@@ -251,9 +271,10 @@ Vector3f traceRay(const Ray& ray, const std::vector<Sphere>& spheres, const std:
 		// again recursively! This will make sure you don't exceed the maxBounces bounce count.
 		Vector3f normal = getSphereNormal(*hitSphere, hitIntersection).normalized();
 		Vector3f incident = ray.direction.normalized();
-		Vector3f reflection = incident + (2 * (std::abs(incident.dot(normal))) * normal);
+		//Vector3f reflection = incident + (2 * (std::abs(incident.dot(normal))) * normal);
+		Vector3f reflection = incident - 2 * incident.dot(normal) * normal;
 		Ray reflectedRay;
-		reflectedRay.origin = hitIntersection;
+		reflectedRay.origin = hitIntersection + reflection * 0.001f;
 		reflectedRay.direction = reflection.normalized();
 		return traceRay(reflectedRay, spheres, lights, bounce + 1);
 		//*** END YOUR CODE
@@ -309,7 +330,8 @@ Vector3f traceRay(const Ray& ray, const std::vector<Sphere>& spheres, const std:
 			
 			Ray reflectedRay;
 			reflectedRay.origin = hitIntersection;
-			reflectedRay.direction = reflect(ray.direction, normal);
+			Vector3f reflection = ray.direction - 2 * ray.direction.dot(normal) * normal;
+			reflectedRay.direction = reflection.normalized();
 			return traceRay(reflectedRay, spheres, lights, bounce + 1);
 		}
 		// *** END YOUR CODE ***
