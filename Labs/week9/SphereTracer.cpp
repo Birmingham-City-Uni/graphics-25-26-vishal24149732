@@ -225,8 +225,8 @@ Vector3f traceRay(const Ray& ray, const std::vector<Sphere>& spheres, const std:
 				//      c. If it's not, compare the value of t to the distance from hitIntersection to the light
 				//			the point is only in shadow if the value of t is less than this distance.
 				Ray shadowRay;
-				shadowRay.origin = hitIntersection + lightDir * 0.001f;
-				shadowRay.direction = lightDir.normalized();
+				shadowRay.origin = hitIntersection - lightDir * 0.001f;
+				shadowRay.direction = -lightDir.normalized();
 				for (const Sphere& sphere : spheres) {
 					float t;
 					Vector3f intersection;
@@ -239,7 +239,7 @@ Vector3f traceRay(const Ray& ray, const std::vector<Sphere>& spheres, const std:
 						}
 						else {
 							float lightDist = (light->getLightLocation() - hitIntersection).norm();
-							if (t < lightDist) {
+							if (t < lightDist - 0.001) {
 								inShadow = true;
 								break;
 							}
