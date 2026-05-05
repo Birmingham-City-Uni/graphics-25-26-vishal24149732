@@ -10,6 +10,11 @@ include_directories(../../3rdParty/eigen-3.4.0)
 add_executable(rasteriser
     rasteriser.cpp
     Mesh.hpp
+    Light.hpp
+    LinAlg.hpp
+    Image.hpp
+    Shading.hpp
+
     )
 
 

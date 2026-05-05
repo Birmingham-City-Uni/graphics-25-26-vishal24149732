@@ -1,204 +1,598 @@
-// This define is necessary to get the M_PI constant.
+//// This define is necessary to get the M_PI constant.
+//#define _USE_MATH_DEFINES
+//#include <math.h>
+//
+//#include <iostream>
+//#include <lodepng.h>
+//#include "Mesh.hpp"
+//
+//
+//Eigen::Vector4f vec3ToVec4(const Eigen::Vector3f& v)
+//{
+//	Eigen::Vector4f output;
+//	output << v.x(), v.y(), v.z(), 1.0f;
+//	return output;
+//}
+//
+//
+//float vec2Cross(const Eigen::Vector2f& v0, const Eigen::Vector2f& v1)
+//{
+//	return v0.x() * v1.y() - v0.y() * v1.x();
+//}
+//
+//void setPixel(std::vector<uint8_t>& image, int x, int y, int width, int height, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
+//{
+//	int pixelIdx = x + y * width;
+//	image[pixelIdx * 4 + 0] = r;
+//	image[pixelIdx * 4 + 1] = g;
+//	image[pixelIdx * 4 + 2] = b;
+//	image[pixelIdx * 4 + 3] = a;
+//}
+//
+//void drawTriangle(std::vector<uint8_t>& image, int width, int height,
+//	const Eigen::Vector2f& p0, const Eigen::Vector2f& p1, const Eigen::Vector2f& p2,
+//	uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
+//{
+//	
+//	int minX, minY, maxX, maxY;
+//	minX = std::min(std::min(p0.x(), p1.x()), p2.x());
+//	minY = std::min(std::min(p0.y(), p1.y()), p2.y());
+//	maxX = std::max(std::max(p0.x(), p1.x()), p2.x());
+//	maxY = std::max(std::max(p0.y(), p1.y()), p2.y());
+//
+//	
+//	minX = std::min(std::max(minX, 0), width);
+//	maxX = std::min(std::max(maxX, 0), width);
+//	minY = std::min(std::max(minY, 0), height);
+//	maxY = std::min(std::max(maxY, 0), height);
+//
+//	Eigen::Vector2f edge1 = p1 - p0;
+//	Eigen::Vector2f edge2 = p2 - p0;
+//	float triangleArea = 0.5f * vec2Cross(edge2, edge1);
+//	if (triangleArea < 0) {
+//		
+//		return;
+//	}
+//
+//	for (int x = minX; x <= maxX; ++x)
+//		for (int y = minY; y <= maxY; ++y) {
+//			Eigen::Vector2f p(x, y);
+//
+//			float a0 = 0.5f * fabsf(vec2Cross(p1 - p2, p - p2));
+//			float a1 = 0.5f * fabsf(vec2Cross(p0 - p2, p - p2));
+//			float a2 = 0.5f * fabsf(vec2Cross(p0 - p1, p - p1));
+//
+//			float b0 = a0 / triangleArea;
+//			float b1 = a1 / triangleArea;
+//			float b2 = a2 / triangleArea;
+//
+//			float sum = b0 + b1 + b2;
+//			if (sum > 1.0001) {
+//				continue;
+//			}
+//
+//			setPixel(image, x, y, width, height, r, g, b, a);
+//		}
+//}
+//
+//
+//void drawMesh(std::vector<unsigned char>& image, const Mesh& mesh,
+//	const Eigen::Vector3f& baseColor, const Eigen::Matrix4f& transform,
+//	int width, int height)
+//{
+//	for (const auto& face : mesh.faces) {
+//		Eigen::Vector3f
+//			v0 = mesh.verts[face[0]],
+//			v1 = mesh.verts[face[1]],
+//			v2 = mesh.verts[face[2]];
+//
+//		Eigen::Vector4f tv0, tv1, tv2;
+//
+//		
+//		Eigen::Vector4f v0h = vec3ToVec4(v0);
+//		Eigen::Vector4f v1h = vec3ToVec4(v1);
+//		Eigen::Vector4f v2h = vec3ToVec4(v2);
+//		tv0 = transform * v0h;
+//		tv1 = transform * v1h;
+//		tv2 = transform * v2h;
+//		
+//
+//		Eigen::Vector2f p0(tv0.x() * 250 + width / 2, -tv0.y() * 250 + height / 2);
+//		Eigen::Vector2f p1(tv1.x() * 250 + width / 2, -tv1.y() * 250 + height / 2);
+//		Eigen::Vector2f p2(tv2.x() * 250 + width / 2, -tv2.y() * 250 + height / 2);
+//
+//
+//		Eigen::Vector3f edge1 = tv1.block<3, 1>(0, 0) - tv0.block<3, 1>(0, 0);
+//		Eigen::Vector3f edge2 = tv2.block<3, 1>(0, 0) - tv0.block<3, 1>(0, 0);
+//		Eigen::Vector3f normal = edge1.cross(edge2).normalized();
+//
+//		float intensity = normal.dot(Eigen::Vector3f(0, 0, 1));
+//		if (intensity > 0.f) {
+//			drawTriangle(image, width, height, p0, p1, p2,
+//				baseColor.x() * intensity * 255,
+//				baseColor.y() * intensity * 255,
+//				baseColor.z() * intensity * 255);
+//		}
+//	}
+//}
+//
+//
+//Eigen::Matrix4f translationMatrix(const Eigen::Vector3f& t)
+//{
+//	
+//	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+//	M(0, 3) = t.x();
+//	M(1, 3) = t.y();
+//	M(2, 3) = t.z();
+//	return M;
+//}
+//
+//
+//Eigen::Matrix4f scaleMatrix(float s)
+//{
+//	// *** Your code here ***
+//	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+//	M(0, 0) = s;
+//	M(1, 1) = s;
+//	M(2, 2) = s;
+//	return M;
+//}
+//
+//
+//Eigen::Matrix4f rotateYMatrix(float theta)
+//{
+//	
+//	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+//	M(0, 0) = cosf(theta);
+//	M(0, 2) = sinf(theta);
+//	M(2, 0) = -sinf(theta);
+//	M(2, 2) = cosf(theta);
+//	return M;
+//}
+//
+//int main()
+//{
+//
+//	std::string outputFilename = "output.png";
+//
+//	const int width = 512, height = 512;
+//	const int nChannels = 4;
+//
+//	std::vector<uint8_t> imageBuffer(height * width * nChannels);
+//
+//	
+//	memset(&imageBuffer[0], 0, width * height * nChannels * sizeof(uint8_t));
+//
+//	std::string bunnyFilename = "../models/stanford_bunny_simplified.obj";
+//	std::string dragonFilename = "../models/stanford_dragon_simplified.obj";
+//	std::string spiderManFilename = "../models/sm.obj";
+//
+//	Mesh bunnyMesh = loadMeshFile(bunnyFilename);
+//	Mesh dragonMesh = loadMeshFile(dragonFilename);
+//	Mesh spiderManMesh = loadMeshFile(spiderManFilename);
+//
+//
+//	
+//
+//	Eigen::Matrix4f bunnyTransform = Eigen::Matrix4f::Identity();
+//	Eigen::Matrix4f dragonTransform = Eigen::Matrix4f::Identity();
+//	Eigen::Matrix4f spiderManTransform = Eigen::Matrix4f::Identity();
+//	std::cout << "huh: " << bunnyTransform << std::endl;
+//	bunnyTransform =
+//		translationMatrix(Eigen::Vector3f(-0.5f, -0.2f, 0.0f)) * rotateYMatrix(0.5f) * scaleMatrix(0.01f);
+//	std::cout << "myMat4: " << bunnyTransform << std::endl;
+//	dragonTransform =
+//		translationMatrix(Eigen::Vector3f(0.5f, 0.2f, 0.0f)) * rotateYMatrix(1.0f) * scaleMatrix(0.01f);
+//	spiderManTransform =
+//		translationMatrix(Eigen::Vector3f(0.0f, 0.0f, 0.0f)) * rotateYMatrix(0.5f) * scaleMatrix(0.5f);
+//
+//	
+//
+//	drawMesh(imageBuffer, bunnyMesh, Eigen::Vector3f(0, 1, 0), bunnyTransform, width, height);
+//	drawMesh(imageBuffer, dragonMesh, Eigen::Vector3f(0, 1, 1), dragonTransform, width, height);
+//	drawMesh(imageBuffer, spiderManMesh, Eigen::Vector3f(0, 1, 1), spiderManTransform, width, height);
+//
+//	
+//	int errorCode;
+//	errorCode = lodepng::encode(outputFilename, imageBuffer, width, height);
+//	if (errorCode) { 
+//		std::cout << "lodepng error encoding image: " << lodepng_error_text(errorCode) << std::endl;
+//		return errorCode;
+//	}
+//
+//	return 0;
+//}
+
+
 #define _USE_MATH_DEFINES
 #include <math.h>
-
 #include <iostream>
+#include <algorithm>
 #include <lodepng.h>
+
+#include "Image.hpp"
+#include "LinAlg.hpp"
+#include "Light.hpp"
 #include "Mesh.hpp"
+#include "Shading.hpp"
+#include <cfloat>
 
+enum ShadingMode {
+    PHONG,
+    BLINN_PHONG
+};
 
-Eigen::Vector4f vec3ToVec4(const Eigen::Vector3f& v)
+struct Triangle {
+    std::array<Eigen::Vector3f, 3> screen;
+    std::array<Eigen::Vector3f, 3> verts;
+    std::array<Eigen::Vector3f, 3> cam;
+    std::array<Eigen::Vector3f, 3> norms;
+    std::array<Eigen::Vector2f, 3> texs;
+};
+
+Eigen::Matrix4f projectionMatrix(int height, int width,
+    float horzFov = 70.f * M_PI / 180.f,
+    float zFar = 50.f,
+    float zNear = 0.1f)
 {
-	Eigen::Vector4f output;
-	output << v.x(), v.y(), v.z(), 1.0f;
-	return output;
+    float vertFov = horzFov * float(height) / width;
+
+    Eigen::Matrix4f projection;
+    projection <<
+        1.0f / tanf(0.5f * horzFov), 0, 0, 0,
+        0, 1.0f / tanf(0.5f * vertFov), 0, 0,
+        0, 0, zFar / (zFar - zNear), -zFar * zNear / (zFar - zNear),
+        0, 0, 1, 0;
+
+    return projection;
 }
 
-
-float vec2Cross(const Eigen::Vector2f& v0, const Eigen::Vector2f& v1)
+void findScreenBoundingBox(const Triangle& t, int width, int height,
+    int& minX, int& minY, int& maxX, int& maxY)
 {
-	return v0.x() * v1.y() - v0.y() * v1.x();
+    minX = std::min({ t.screen[0].x(), t.screen[1].x(), t.screen[2].x() });
+    minY = std::min({ t.screen[0].y(), t.screen[1].y(), t.screen[2].y() });
+    maxX = std::max({ t.screen[0].x(), t.screen[1].x(), t.screen[2].x() });
+    maxY = std::max({ t.screen[0].y(), t.screen[1].y(), t.screen[2].y() });
+
+    minX = std::max(0, std::min(minX, width - 1));
+    maxX = std::max(0, std::min(maxX, width - 1));
+    minY = std::max(0, std::min(minY, height - 1));
+    maxY = std::max(0, std::min(maxY, height - 1));
 }
 
-void setPixel(std::vector<uint8_t>& image, int x, int y, int width, int height, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
+void drawTriangle(
+    std::vector<uint8_t>& image,
+    int width, int height,
+    std::vector<float>& zBuffer,
+    const Triangle& t,
+    const std::vector<std::unique_ptr<Light>>& lights,
+    const Eigen::Vector3f& albedo,
+    const Eigen::Vector3f& specularColor,
+    float specularExponent, const std::vector<uint8_t>& textureImage,
+    unsigned texWidth, unsigned texHeight,
+    ShadingMode shadingMode,
+    const Eigen::Vector3f& camWorldPos)
 {
-	int pixelIdx = x + y * width;
-	image[pixelIdx * 4 + 0] = r;
-	image[pixelIdx * 4 + 1] = g;
-	image[pixelIdx * 4 + 2] = b;
-	image[pixelIdx * 4 + 3] = a;
+    
+    int minX, minY, maxX, maxY;
+    findScreenBoundingBox(t, width, height, minX, minY, maxX, maxY);
+
+    Eigen::Vector2f edge1 = v2(t.screen[2] - t.screen[0]);
+    Eigen::Vector2f edge2 = v2(t.screen[1] - t.screen[0]);
+
+    float triangleArea = 0.5f * vec2Cross(edge2, edge1);
+    if (triangleArea < 0) return;
+
+    for (int x = minX; x <= maxX; ++x)
+        for (int y = minY; y <= maxY; ++y)
+        {
+            Eigen::Vector2f p(x, y);
+
+            float a0 = 0.5f * fabsf(vec2Cross(v2(t.screen[1]) - v2(t.screen[2]), p - v2(t.screen[2])));
+            float a1 = 0.5f * fabsf(vec2Cross(v2(t.screen[0]) - v2(t.screen[2]), p - v2(t.screen[2])));
+            float a2 = 0.5f * fabsf(vec2Cross(v2(t.screen[0]) - v2(t.screen[1]), p - v2(t.screen[1])));
+
+            float b0 = a0 / triangleArea;
+            float b1 = a1 / triangleArea;
+            float b2 = a2 / triangleArea;
+
+            if (b0 + b1 + b2 > 1.0001f) continue;
+
+            
+
+            // -------- Perspective Correct --------
+            float d0 = t.cam[0].z();
+            float d1 = t.cam[1].z();
+            float d2 = t.cam[2].z();
+
+			//this will check the division issue , if any of the vertices are behind the camera, we will skip this pixel
+            if (fabs(d0) < 1e-6 || fabs(d1) < 1e-6 || fabs(d2) < 1e-6)
+                continue;
+
+            float invZ = (b0 / d0) + (b1 / d1) + (b2 / d2);
+            float depth = -1.0f / invZ;
+
+            int idx = x + y * width;
+            if (depth >= zBuffer[idx]) continue;
+            zBuffer[idx] = depth;
+
+            //std::cout << depth << std::endl;
+
+            Eigen::Vector3f worldP =
+                depth * ((t.verts[0] * b0) / d0 +
+                    (t.verts[1] * b1) / d1 +
+                    (t.verts[2] * b2) / d2);
+
+            Eigen::Vector3f normP =
+                ((t.norms[0] * b0) / d0 +
+                    (t.norms[1] * b1) / d1 +
+                    (t.norms[2] * b2) / d2).normalized();
+
+            // -------- TEXTURE HOOK --------
+            // Eigen::Vector2f uv = ...
+            // Color texColor = sampleTexture(...)
+            // Eigen::Vector3f finalAlbedo = texColor * albedo;
+            float w0 = 1.0f / d0;
+            float w1 = 1.0f / d1;
+            float w2 = 1.0f / d2;
+
+            float denom = (b0 * w0 + b1 * w1 + b2 * w2);
+
+            Eigen::Vector2f uv =
+                (t.texs[0] * b0 * w0 +
+                    t.texs[1] * b1 * w1 +
+                    t.texs[2] * b2 * w2) / denom;
+
+            float u = std::max(0.0f, std::min(uv.x(), 1.0f));
+            float v = std::max(0.0f, std::min(uv.y(), 1.0f));
+
+            v = 1.0f - v;
+
+            int texX = static_cast<int>(u * (texWidth - 1));
+            int texY = static_cast<int>(v * (texHeight - 1));
+
+            texX = std::max(0, std::min(texX, (int)texWidth - 1));
+            texY = std::max(0, std::min(texY, (int)texHeight - 1));
+
+            int idxTex = (texY * texWidth + texX) * 4;
+
+            Eigen::Vector3f texColor(
+                textureImage[idxTex + 0] / 255.0f,
+                textureImage[idxTex + 1] / 255.0f,
+                textureImage[idxTex + 2] / 255.0f
+            );
+
+            Eigen::Vector3f color = Eigen::Vector3f::Zero();
+            Eigen::Vector3f viewDir = (camWorldPos - worldP).normalized();
+            //color = Eigen::Vector3f(1, 0, 0);
+            for (auto& light : lights)
+            {
+                Eigen::Vector3f lightIntensity = light->getIntensityAt(worldP);
+
+                if (light->getType() != Light::Type::AMBIENT)
+                {
+                    Eigen::Vector3f L = light->getDirection(worldP);
+
+                    float spec;
+                    if (shadingMode == PHONG)
+                        spec = phongSpecularTerm(L, normP, viewDir, specularExponent);
+                    else
+                        spec = blinnPhongSpecularTerm(L, normP, viewDir, specularExponent);
+
+                    Eigen::Vector3f specOut = (specularColor * spec).cwiseProduct(lightIntensity);
+
+                    float NdotL = std::max(normP.dot(-L), 0.0f);
+                    Eigen::Vector3f diffOut = (texColor * NdotL).cwiseProduct(lightIntensity);
+
+                    color += specOut + diffOut;
+                }
+                else
+                {
+                    color += lightIntensity.cwiseProduct(texColor);
+                }
+            }
+
+            Color c;
+            c.r = std::min(powf(color.x(), 1 / 2.2f), 1.0f) * 255;
+            c.g = std::min(powf(color.y(), 1 / 2.2f), 1.0f) * 255;
+            c.b = std::min(powf(color.z(), 1 / 2.2f), 1.0f) * 255;
+            c.a = 255;
+
+            setPixel(image, x, y, width, height, c);
+        }
 }
 
-void drawTriangle(std::vector<uint8_t>& image, int width, int height,
-	const Eigen::Vector2f& p0, const Eigen::Vector2f& p1, const Eigen::Vector2f& p2,
-	uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
+void drawMesh(
+    std::vector<uint8_t>& image,
+    std::vector<float>& zBuffer,
+    const Mesh& mesh,
+    const Eigen::Vector3f& albedo,
+    const Eigen::Vector3f& specularColor,
+    float specularExponent,
+    ShadingMode mode,
+    const Eigen::Vector3f& camWorldPos,
+    const Eigen::Matrix4f& modelToWorld,
+    const Eigen::Matrix4f& worldToCam,
+    const Eigen::Matrix4f& projection,
+    const std::vector<uint8_t>& textureImage,
+    unsigned texWidth, unsigned texHeight,
+    const std::vector<std::unique_ptr<Light>>& lights,
+    int width, int height)
 {
-	
-	int minX, minY, maxX, maxY;
-	minX = std::min(std::min(p0.x(), p1.x()), p2.x());
-	minY = std::min(std::min(p0.y(), p1.y()), p2.y());
-	maxX = std::max(std::max(p0.x(), p1.x()), p2.x());
-	maxY = std::max(std::max(p0.y(), p1.y()), p2.y());
+    std::cout << "Faces: " << mesh.vFaces.size() << std::endl;
+    std::cout << "Tex coords count: " << mesh.texs.size() << std::endl;
+    for (int i = 0; i < mesh.vFaces.size(); ++i)
+    {
+        Triangle t;
 
-	
-	minX = std::min(std::max(minX, 0), width);
-	maxX = std::min(std::max(maxX, 0), width);
-	minY = std::min(std::max(minY, 0), height);
-	maxY = std::min(std::max(maxY, 0), height);
+        for (int j = 0; j < 3; ++j)
+        {
 
-	Eigen::Vector2f edge1 = p1 - p0;
-	Eigen::Vector2f edge2 = p2 - p0;
-	float triangleArea = 0.5f * vec2Cross(edge2, edge1);
-	if (triangleArea < 0) {
-		
-		return;
-	}
+            auto v = mesh.verts[mesh.vFaces[i][j]];
 
-	for (int x = minX; x <= maxX; ++x)
-		for (int y = minY; y <= maxY; ++y) {
-			Eigen::Vector2f p(x, y);
-
-			float a0 = 0.5f * fabsf(vec2Cross(p1 - p2, p - p2));
-			float a1 = 0.5f * fabsf(vec2Cross(p0 - p2, p - p2));
-			float a2 = 0.5f * fabsf(vec2Cross(p0 - p1, p - p1));
-
-			float b0 = a0 / triangleArea;
-			float b1 = a1 / triangleArea;
-			float b2 = a2 / triangleArea;
-
-			float sum = b0 + b1 + b2;
-			if (sum > 1.0001) {
-				continue;
-			}
-
-			setPixel(image, x, y, width, height, r, g, b, a);
-		}
-}
+            if (i == 0 && j == 0) {
+                std::cout << "Sample vertex (model space): "
+                    << v.transpose() << std::endl;
+            }
+            auto n = mesh.norms[mesh.nFaces[i][j]];
+            auto tCoord = mesh.texs[mesh.tFaces[i][j]];
 
 
-void drawMesh(std::vector<unsigned char>& image, const Mesh& mesh,
-	const Eigen::Vector3f& baseColor, const Eigen::Matrix4f& transform,
-	int width, int height)
-{
-	for (const auto& face : mesh.faces) {
-		Eigen::Vector3f
-			v0 = mesh.verts[face[0]],
-			v1 = mesh.verts[face[1]],
-			v2 = mesh.verts[face[2]];
 
-		Eigen::Vector4f tv0, tv1, tv2;
+            t.verts[j] = (modelToWorld * vec3ToVec4(v)).head<3>();
+            if (i == 0 && j == 0) {
+                std::cout << "Original vertex (model space): "
+                    << v.transpose() << std::endl;
+            }
+            t.cam[j] = (worldToCam * modelToWorld * vec3ToVec4(v)).head<3>();
 
-		
-		Eigen::Vector4f v0h = vec3ToVec4(v0);
-		Eigen::Vector4f v1h = vec3ToVec4(v1);
-		Eigen::Vector4f v2h = vec3ToVec4(v2);
-		tv0 = transform * v0h;
-		tv1 = transform * v1h;
-		tv2 = transform * v2h;
-		
+            Eigen::Vector4f clip =
+                projection * worldToCam * modelToWorld * vec3ToVec4(v);
+            clip /= clip.w();
 
-		Eigen::Vector2f p0(tv0.x() * 250 + width / 2, -tv0.y() * 250 + height / 2);
-		Eigen::Vector2f p1(tv1.x() * 250 + width / 2, -tv1.y() * 250 + height / 2);
-		Eigen::Vector2f p2(tv2.x() * 250 + width / 2, -tv2.y() * 250 + height / 2);
+            t.screen[j] = {
+                (clip.x() + 1) * width / 2,
+                (-clip.y() + 1) * height / 2,
+                clip.z()
+            };
 
+            t.norms[j] =
+                (modelToWorld.block<3, 3>(0, 0).inverse().transpose() * n).normalized();
 
-		Eigen::Vector3f edge1 = tv1.block<3, 1>(0, 0) - tv0.block<3, 1>(0, 0);
-		Eigen::Vector3f edge2 = tv2.block<3, 1>(0, 0) - tv0.block<3, 1>(0, 0);
-		Eigen::Vector3f normal = edge1.cross(edge2).normalized();
+            t.texs[j] = tCoord;
+        }
 
-		float intensity = normal.dot(Eigen::Vector3f(0, 0, 1));
-		if (intensity > 0.f) {
-			drawTriangle(image, width, height, p0, p1, p2,
-				baseColor.x() * intensity * 255,
-				baseColor.y() * intensity * 255,
-				baseColor.z() * intensity * 255);
-		}
-	}
-}
-
-
-Eigen::Matrix4f translationMatrix(const Eigen::Vector3f& t)
-{
-	
-	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
-	M(0, 3) = t.x();
-	M(1, 3) = t.y();
-	M(2, 3) = t.z();
-	return M;
-}
-
-
-Eigen::Matrix4f scaleMatrix(float s)
-{
-	// *** Your code here ***
-	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
-	M(0, 0) = s;
-	M(1, 1) = s;
-	M(2, 2) = s;
-	return M;
-}
-
-
-Eigen::Matrix4f rotateYMatrix(float theta)
-{
-	
-	Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
-	M(0, 0) = cosf(theta);
-	M(0, 2) = sinf(theta);
-	M(2, 0) = -sinf(theta);
-	M(2, 2) = cosf(theta);
-	return M;
+        drawTriangle(image, width, height, zBuffer, t,
+            lights, albedo, specularColor,
+            specularExponent, textureImage, texWidth, texHeight, mode, camWorldPos);
+    }
 }
 
 int main()
 {
+	std::cout << "Starting rasteriser..." << std::endl;
+    const int width = 1920;
+    const int height = 1080;
 
-	std::string outputFilename = "output.png";
+    std::vector<uint8_t> image(width * height * 4);
+    std::vector<float> zBuffer(width * height, FLT_MAX);
 
-	const int width = 512, height = 512;
-	const int nChannels = 4;
+    Color black{ 0,0,0,255 };
+    for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x)
+            setPixel(image, x, y, width, height, black);
 
-	std::vector<uint8_t> imageBuffer(height * width * nChannels);
+    std::vector<uint8_t> textureImage;
+    unsigned texWidth, texHeight;
 
-	
-	memset(&imageBuffer[0], 0, width * height * nChannels * sizeof(uint8_t));
+    unsigned error = lodepng::decode(textureImage, texWidth, texHeight, "../tex.PNG");
+    if (error) {
+        std::cout << "Texture load error: " << lodepng_error_text(error) << std::endl;
+    }
 
-	std::string bunnyFilename = "../models/stanford_bunny_simplified.obj";
-	std::string dragonFilename = "../models/stanford_dragon_simplified.obj";
-	std::string spiderManFilename = "../models/sm.obj";
+    // -------- CAMERA --------
+    Eigen::Matrix4f cameraToWorld = Eigen::Matrix4f::Identity();
 
-	Mesh bunnyMesh = loadMeshFile(bunnyFilename);
-	Mesh dragonMesh = loadMeshFile(dragonFilename);
-	Mesh spiderManMesh = loadMeshFile(spiderManFilename);
+    Eigen::Matrix4f worldToCam = cameraToWorld.inverse();
+    Eigen::Matrix4f proj = projectionMatrix(height, width);
+
+    Eigen::Vector3f camPos =
+        (cameraToWorld * Eigen::Vector4f(0, 0, 0, 1)).head<3>();
+
+    // -------- LIGHTS --------
+    std::vector<std::unique_ptr<Light>> lights;
+
+    lights.emplace_back(new AmbientLight(Eigen::Vector3f(0.05f, 0.05f, 0.05f)));
+
+    // Sun light
+    lights.emplace_back(new DirectionalLight(
+        Eigen::Vector3f(1.2f, 0.9f, 0.7f),
+        Eigen::Vector3f(-1, -1, -0.5f)));
+
+    // Rim light
+    lights.emplace_back(new PointLight(
+        Eigen::Vector3f(2.5f, 2.0f, 2.0f),
+        Eigen::Vector3f(1.5f, 1.5f, 2.0f)));
+
+    // -------- LOAD MODEL --------
+    
+    Mesh spiderman = loadMeshFile("../models/sm_final6.obj");
+
+    Eigen::Vector3f minV(FLT_MAX, FLT_MAX, FLT_MAX);
+    Eigen::Vector3f maxV(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    for (const auto& v : spiderman.verts) {
+        minV = minV.cwiseMin(v);
+        maxV = maxV.cwiseMax(v);
+    }
+
+    Eigen::Vector3f center = (minV + maxV) * 0.5f;
+
+    std::cout << "Model center: " << center.transpose() << std::endl;
 
 
-	
+    Eigen::Matrix4f model =
 
-	Eigen::Matrix4f bunnyTransform = Eigen::Matrix4f::Identity();
-	Eigen::Matrix4f dragonTransform = Eigen::Matrix4f::Identity();
-	Eigen::Matrix4f spiderManTransform = Eigen::Matrix4f::Identity();
-	std::cout << "huh: " << bunnyTransform << std::endl;
-	bunnyTransform =
-		translationMatrix(Eigen::Vector3f(-0.5f, -0.2f, 0.0f)) * rotateYMatrix(0.5f) * scaleMatrix(0.01f);
-	std::cout << "myMat4: " << bunnyTransform << std::endl;
-	dragonTransform =
-		translationMatrix(Eigen::Vector3f(0.5f, 0.2f, 0.0f)) * rotateYMatrix(1.0f) * scaleMatrix(0.01f);
-	spiderManTransform =
-		translationMatrix(Eigen::Vector3f(0.0f, 0.0f, 0.0f)) * rotateYMatrix(0.5f) * scaleMatrix(0.5f);
+        translationMatrix(Eigen::Vector3f(-10.0f, -10.0f, 0.0f)) *
+        rotateXMatrix(0.1f) *
+        translationMatrix(-center)*
+        scaleMatrix(5.0f);
 
-	
+   
 
-	drawMesh(imageBuffer, bunnyMesh, Eigen::Vector3f(0, 1, 0), bunnyTransform, width, height);
-	drawMesh(imageBuffer, dragonMesh, Eigen::Vector3f(0, 1, 1), dragonTransform, width, height);
-	drawMesh(imageBuffer, spiderManMesh, Eigen::Vector3f(0, 1, 1), spiderManTransform, width, height);
+    drawMesh(image, zBuffer, spiderman,
+        Eigen::Vector3f(1.0f, 1.0f, 1.0f),   // base color (replace with texture later)
+        Eigen::Vector3f(1.2f, 1.2f, 1.2f),
+        300.0f,
+        ShadingMode::BLINN_PHONG,
+        camPos,
+        model,
+        worldToCam,
+        proj,
+		textureImage,
+		texWidth, texHeight,
+        lights,
+        width,
+        height);
 
-	
-	int errorCode;
-	errorCode = lodepng::encode(outputFilename, imageBuffer, width, height);
-	if (errorCode) { 
-		std::cout << "lodepng error encoding image: " << lodepng_error_text(errorCode) << std::endl;
-		return errorCode;
-	}
+    //------
+    std::vector<uint8_t> textureImage2;
+    unsigned texWidth2, texHeight2;
 
-	return 0;
+    unsigned error = lodepng::decode(textureImage2, texWidth2, texHeight2, "../tex.PNG");
+    if (error) {
+        std::cout << "Texture load error: " << lodepng_error_text(error) << std::endl;
+    }
+    Mesh build = loadMeshFile("../models/buildings.obj");
+
+    Eigen::Matrix4f model2 =
+
+        translationMatrix(Eigen::Vector3f(-10.0f, -10.0f, 0.0f)) *
+        rotateXMatrix(0.1f) *
+        translationMatrix(-center) *
+        scaleMatrix(5.0f);
+
+
+
+    drawMesh(image, zBuffer, build,
+        Eigen::Vector3f(1.0f, 1.0f, 1.0f),   // base color (replace with texture later)
+        Eigen::Vector3f(1.2f, 1.2f, 1.2f),
+        300.0f,
+        ShadingMode::BLINN_PHONG,
+        camPos,
+        model,
+        worldToCam,
+        proj,
+        textureImage2,
+        texWidth2, texHeight2,
+        lights,
+        width,
+        height);
+    std::cout << "Model center: " << center.transpose() << std::endl;
+
+    // -------- SAVE --------
+    lodepng::encode("output.png", image, width, height);
+
+    return 0;
 }
