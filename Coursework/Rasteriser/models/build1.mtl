@@ -1,0 +1,12 @@
+# Blender 5.0.1 MTL File: 'pathtracer.blend'
+# www.blender.org
+
+newmtl Material.006
+Ns 1000.000000
+Ka 0.190909 0.190909 0.190909
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
+map_Kd C:/Users/Asus/Documents/GitHub/graphics-25-26-vishal24149732/Coursework/Rasteriser/build1Tex.png

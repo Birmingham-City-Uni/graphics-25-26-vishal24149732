@@ -272,7 +272,7 @@ void drawTriangle(
     float specularExponent, const std::vector<uint8_t>& textureImage,
     unsigned texWidth, unsigned texHeight,
     ShadingMode shadingMode,
-    const Eigen::Vector3f& camWorldPos)
+    const Eigen::Vector3f& camWorldPos, Eigen::Vector3f& fogColor)
 {
     
     int minX, minY, maxX, maxY;
@@ -382,7 +382,7 @@ void drawTriangle(
 
                     Eigen::Vector3f specOut = (specularColor * spec).cwiseProduct(lightIntensity);
 
-                    float NdotL = std::max(normP.dot(-L), 0.0f);
+                    float NdotL = std::max(normP.dot(L), 0.0f);
                     Eigen::Vector3f diffOut = (texColor * NdotL).cwiseProduct(lightIntensity);
 
                     color += specOut + diffOut;
@@ -392,6 +392,21 @@ void drawTriangle(
                     color += lightIntensity.cwiseProduct(texColor);
                 }
             }
+
+            float fogStart = 25.0f;
+            float fogEnd = 80.0f;
+
+            float distance = (camWorldPos - worldP).norm();
+
+            float fogFactor =
+                (distance - fogStart) / (fogEnd - fogStart);
+
+            fogFactor = std::max(0.0f,
+                std::min(fogFactor, 1.0f));
+
+            color =
+                color * (1.0f - (fogFactor/0.5f)) +
+                fogColor * fogFactor;
 
             Color c;
             c.r = std::min(powf(color.x(), 1 / 2.2f), 1.0f) * 255;
@@ -418,7 +433,7 @@ void drawMesh(
     const std::vector<uint8_t>& textureImage,
     unsigned texWidth, unsigned texHeight,
     const std::vector<std::unique_ptr<Light>>& lights,
-    int width, int height)
+    int width, int height, Eigen::Vector3f& fogColor)
 {
     std::cout << "Faces: " << mesh.vFaces.size() << std::endl;
     std::cout << "Tex coords count: " << mesh.texs.size() << std::endl;
@@ -465,23 +480,125 @@ void drawMesh(
 
         drawTriangle(image, width, height, zBuffer, t,
             lights, albedo, specularColor,
-            specularExponent, textureImage, texWidth, texHeight, mode, camWorldPos);
+            specularExponent, textureImage, texWidth, texHeight, mode, camWorldPos, fogColor);
+    }
+}
+
+void applyDepthOfField(
+    std::vector<uint8_t>& image,
+    const std::vector<float>& zBuffer,
+    int width,
+    int height,
+    float focusDepth)
+{
+    std::vector<uint8_t> original = image;
+
+    for (int y = 2; y < height - 2; y++)
+    {
+        for (int x = 2; x < width - 2; x++)
+        {
+            int idx = x + y * width;
+
+            float depth = zBuffer[idx];
+
+            float blurAmount =
+                fabs(depth - focusDepth) * 0.18f;
+
+            blurAmount =
+                std::min(blurAmount, 4.0f);
+
+            int radius = int(blurAmount);
+
+            if (radius < 1)
+                continue;
+
+            Eigen::Vector3f color(0, 0, 0);
+            int count = 0;
+
+            for (int oy = -radius; oy <= radius; oy++)
+            {
+                for (int ox = -radius; ox <= radius; ox++)
+                {
+                    int sx = std::max(0,
+                        std::min(x + ox, width - 1));
+
+                    int sy = std::max(0,
+                        std::min(y + oy, height - 1));
+
+                    int sampleIdx =
+                        (sy * width + sx) * 4;
+
+                    color.x() += original[sampleIdx + 0];
+                    color.y() += original[sampleIdx + 1];
+                    color.z() += original[sampleIdx + 2];
+
+                    count++;
+                }
+            }
+
+            color /= float(count);
+
+            int outIdx = idx * 4;
+
+            image[outIdx + 0] = (uint8_t)color.x();
+            image[outIdx + 1] = (uint8_t)color.y();
+            image[outIdx + 2] = (uint8_t)color.z();
+        }
     }
 }
 
 int main()
 {
 	std::cout << "Starting rasteriser..." << std::endl;
-    const int width = 1920;
-    const int height = 1080;
+    const int finalWidth = 1920;
+    const int finalHeight = 1080;
+
+    const int scale = 2;
+
+    const int width = finalWidth * scale;
+    const int height = finalHeight * scale;
 
     std::vector<uint8_t> image(width * height * 4);
     std::vector<float> zBuffer(width * height, FLT_MAX);
+    std::vector<float> zBuffer2(width * height, 5.0f);
 
-    Color black{ 0,0,0,255 };
+    //sky background 
+    std::vector<uint8_t> skyImage;
+    unsigned skyWidth, skyHeight;
+
+    unsigned skyError = lodepng::decode(
+        skyImage,
+        skyWidth,
+        skyHeight,
+        "../sky.png");
+
+    if (skyError)
+    {
+        std::cout << "Sky load error: "
+            << lodepng_error_text(skyError)
+            << std::endl;
+    }
+
     for (int y = 0; y < height; ++y)
+    {
         for (int x = 0; x < width; ++x)
-            setPixel(image, x, y, width, height, black);
+        {
+            int screenIdx = (y * width + x) * 4;
+
+            float u = float(x) / width;
+            float v = float(y) / height;
+
+            int skyX = int(u * (skyWidth - 1));
+            int skyY = int(v * (skyHeight - 1));
+
+            int skyIdx = (skyY * skyWidth + skyX) * 4;
+
+            image[screenIdx + 0] = skyImage[skyIdx + 0];
+            image[screenIdx + 1] = skyImage[skyIdx + 1];
+            image[screenIdx + 2] = skyImage[skyIdx + 2];
+            image[screenIdx + 3] = 255;
+        }
+    }
 
     std::vector<uint8_t> textureImage;
     unsigned texWidth, texHeight;
@@ -503,17 +620,21 @@ int main()
     // -------- LIGHTS --------
     std::vector<std::unique_ptr<Light>> lights;
 
-    lights.emplace_back(new AmbientLight(Eigen::Vector3f(0.05f, 0.05f, 0.05f)));
+    lights.emplace_back(new AmbientLight(Eigen::Vector3f(0.12f, 0.09f, 0.08f)));
 
     // Sun light
     lights.emplace_back(new DirectionalLight(
-        Eigen::Vector3f(1.2f, 0.9f, 0.7f),
+        Eigen::Vector3f(1.8f, 1.1f, 0.55f),
         Eigen::Vector3f(-1, -1, -0.5f)));
 
     // Rim light
-    lights.emplace_back(new PointLight(
+    /*lights.emplace_back(new PointLight(
         Eigen::Vector3f(2.5f, 2.0f, 2.0f),
-        Eigen::Vector3f(1.5f, 1.5f, 2.0f)));
+        Eigen::Vector3f(1.5f, 1.5f, 2.0f)));*/
+
+    //warm fog
+    Eigen::Vector3f fogColor(0.85f, 0.65f, 0.5f);
+    
 
     // -------- LOAD MODEL --------
     
@@ -534,7 +655,7 @@ int main()
 
     Eigen::Matrix4f model =
 
-        translationMatrix(Eigen::Vector3f(-10.0f, -10.0f, 0.0f)) *
+        translationMatrix(Eigen::Vector3f(-8.0f, -8.0f, 0.0f)) *
         rotateXMatrix(0.1f) *
         translationMatrix(-center)*
         scaleMatrix(5.0f);
@@ -554,45 +675,188 @@ int main()
 		texWidth, texHeight,
         lights,
         width,
-        height);
+        height, fogColor);
 
     //------
     std::vector<uint8_t> textureImage2;
     unsigned texWidth2, texHeight2;
 
-    unsigned error = lodepng::decode(textureImage2, texWidth2, texHeight2, "../tex.PNG");
-    if (error) {
+    unsigned error2 = lodepng::decode(textureImage2, texWidth2, texHeight2, "../build1Tex.PNG");
+    if (error2) {
         std::cout << "Texture load error: " << lodepng_error_text(error) << std::endl;
     }
-    Mesh build = loadMeshFile("../models/buildings.obj");
+    Mesh build2 = loadMeshFile("../models/build1.obj");
 
     Eigen::Matrix4f model2 =
 
-        translationMatrix(Eigen::Vector3f(-10.0f, -10.0f, 0.0f)) *
+        translationMatrix(Eigen::Vector3f(85.0f, -35.0f, -10.0f)) *
         rotateXMatrix(0.1f) *
-        translationMatrix(-center) *
-        scaleMatrix(5.0f);
+        scaleMatrix(50.0f);
 
 
 
-    drawMesh(image, zBuffer, build,
+    drawMesh(image, zBuffer, build2,
         Eigen::Vector3f(1.0f, 1.0f, 1.0f),   // base color (replace with texture later)
         Eigen::Vector3f(1.2f, 1.2f, 1.2f),
         300.0f,
         ShadingMode::BLINN_PHONG,
         camPos,
-        model,
+        model2,
         worldToCam,
         proj,
         textureImage2,
         texWidth2, texHeight2,
         lights,
         width,
-        height);
+        height, fogColor);
+
+    //------
+    std::vector<uint8_t> textureImage3;
+    unsigned texWidth3, texHeight3;
+
+    unsigned error3 = lodepng::decode(textureImage3, texWidth3, texHeight3, "../build2Tex.PNG");
+    if (error3) {
+        std::cout << "Texture load error: " << lodepng_error_text(error) << std::endl;
+    }
+    Mesh build3 = loadMeshFile("../models/build2.obj");
+
+    Eigen::Matrix4f model3 =
+
+        translationMatrix(Eigen::Vector3f(-3.0f, -10.0f, -10.0f)) *
+        rotateXMatrix(0.1f) *
+        scaleMatrix(5.0f);
+
+
+
+    drawMesh(image, zBuffer, build3,
+        Eigen::Vector3f(1.0f, 1.0f, 1.0f),   // base color (replace with texture later)
+        Eigen::Vector3f(1.2f, 1.2f, 1.2f),
+        300.0f,
+        ShadingMode::BLINN_PHONG,
+        camPos,
+        model3,
+        worldToCam,
+        proj,
+        textureImage3,
+        texWidth3, texHeight3,
+        lights,
+        width,
+        height, fogColor);
+
+    //------
+    std::vector<uint8_t> textureImage4;
+    unsigned texWidth4, texHeight4;
+
+    unsigned error4 = lodepng::decode(textureImage4, texWidth4, texHeight4, "../build3Tex.PNG");
+    if (error4) {
+        std::cout << "Texture load error: " << lodepng_error_text(error4) << std::endl;
+    }
+    Mesh build4 = loadMeshFile("../models/build3.obj");
+
+    Eigen::Matrix4f model4 =
+
+        translationMatrix(Eigen::Vector3f(0.0f, -10.0f, -10.0f))*
+        rotateXMatrix(0.1f) *
+        scaleMatrix(5.0f);
+
+
+
+    drawMesh(image, zBuffer, build4,
+        Eigen::Vector3f(1.0f, 1.0f, 1.0f),   // base color (replace with texture later)
+        Eigen::Vector3f(1.2f, 1.2f, 1.2f),
+        300.0f,
+        ShadingMode::BLINN_PHONG,
+        camPos,
+        model4,
+        worldToCam,
+        proj,
+        textureImage4,
+        texWidth4, texHeight4,
+        lights,
+        width,
+        height, fogColor);
+
+    //------
+    std::vector<uint8_t> textureImage5;
+    unsigned texWidth5, texHeight5;
+
+    unsigned error5 = lodepng::decode(textureImage5, texWidth5, texHeight5, "../build4Tex.PNG");
+    if (error5) {
+        std::cout << "Texture load error: " << lodepng_error_text(error5) << std::endl;
+    }
+    Mesh build5 = loadMeshFile("../models/build4.obj");
+
+    Eigen::Matrix4f model5 =
+
+        translationMatrix(Eigen::Vector3f(5.0f, -10.0f, -10.0f)) *
+        rotateXMatrix(0.1f) *
+        scaleMatrix(5.0f);
+
+
+
+    drawMesh(image, zBuffer2, build5,
+        Eigen::Vector3f(1.0f, 1.0f, 1.0f),   // base color (replace with texture later)
+        Eigen::Vector3f(1.2f, 1.2f, 1.2f),
+        300.0f,
+        ShadingMode::BLINN_PHONG,
+        camPos,
+        model5,
+        worldToCam,
+        proj,
+        textureImage5,
+        texWidth5, texHeight5,
+        lights,
+        width,
+        height, fogColor);
+
+
     std::cout << "Model center: " << center.transpose() << std::endl;
 
+    applyDepthOfField(
+        image,
+        zBuffer,
+        width,
+        height,
+        12.0f);
+
+    std::vector<uint8_t> finalImage(finalWidth * finalHeight * 4);
+
+    for (int y = 0; y < finalHeight; y++)
+    {
+        for (int x = 0; x < finalWidth; x++)
+        {
+            Eigen::Vector3f color(0, 0, 0);
+
+            for (int oy = 0; oy < scale; oy++)
+            {
+                for (int ox = 0; ox < scale; ox++)
+                {
+                    int srcX = x * scale + ox;
+                    int srcY = y * scale + oy;
+
+                    int srcIdx = (srcY * width + srcX) * 4;
+
+                    color.x() += image[srcIdx + 0];
+                    color.y() += image[srcIdx + 1];
+                    color.z() += image[srcIdx + 2];
+                }
+            }
+
+            color /= float(scale * scale);
+
+            int dstIdx = (y * finalWidth + x) * 4;
+
+            finalImage[dstIdx + 0] = (uint8_t)color.x();
+            finalImage[dstIdx + 1] = (uint8_t)color.y();
+            finalImage[dstIdx + 2] = (uint8_t)color.z();
+            finalImage[dstIdx + 3] = 255;
+        }
+    }
+
+    
+
     // -------- SAVE --------
-    lodepng::encode("output.png", image, width, height);
+    lodepng::encode("output.png", finalImage, finalWidth, finalHeight);
 
     return 0;
 }

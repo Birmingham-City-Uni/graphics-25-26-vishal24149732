@@ -64,25 +64,25 @@ int main(int argc, char* argv[]) {
 		lavender(178.f / 255.f, 164.f / 255.f, 212.f / 255.f);
 
 	// *** Load shaders and textures ***
-	std::vector<uint8_t> spotTexture;
+	std::vector<uint8_t> spiderTexture;
 	unsigned int width, height;
-	lodepng::decode(spotTexture, width, height, "../models/spot.png");
+	lodepng::decode(spiderTexture, width, height, "../models/tex.png");
 
 	LambertianShader redLambertianShader(red);
 	PhongShader bluePlasticShader(blue, Eigen::Vector3f(1.f, 1.f, 1.f), 100.f);
 	LambertianShader aquaLambertianShader(aqua);
 	LambertianShader lavenderLambertianShader(lavender);
-	TexturedLambertianShader spotShader(&spotTexture, width, height);
+	TexturedLambertianShader spiderShader(&spiderTexture, width, height);
 	MirrorShader mirrorShader;
 	TexCoordTestShader texCoordTestShader;
 
 	// *** Set up scene ***
 	Scene scene;
 
-	// Optional code: here's how to add the spot mesh to the scene, using a BVH
+	// Optional code: here's how to add the spider mesh to the scene, using a BVH
 	// Try enabling this and comparing it to the non-BVH version below!
-	Model spotModel("../models/spot.obj");
-	scene.renderables.push_back(std::make_shared<BVHNode>(spotModel, &spotShader, 4, rotateY(M_PI / 4.0f)));
+	Model spiderMan("../models/sm_final6.obj");
+	scene.renderables.push_back(std::make_shared<BVHNode>(spiderMan, &spiderShader, 4,  rotateY(M_PI / 4.0f)));
 
 	// Here's how to add the mesh without using the BVH.
 	// Try comparing performance to the BVH version above.
